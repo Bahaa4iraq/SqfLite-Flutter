@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:sqflite_test/addData.dart';
 import 'package:sqflite_test/editData.dart';
@@ -32,6 +34,13 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          IconButton(
+              onPressed: () async {
+                sqlDB.deleteDB();
+              },
+              icon: Icon(Icons.delete))
+        ],
         centerTitle: true,
         title: const Text("SqfLite"),
       ),
@@ -41,6 +50,24 @@ class _HomeState extends State<Home> {
           itemCount: res.length,
           itemBuilder: (context, i) => Card(
             child: ListTile(
+              leading: InkWell(
+                onTap: () {
+                  showModalBottomSheet(
+                      context: context,
+                      builder: (_) {
+                        return Center(
+                          child: Image.memory(
+                            base64Decode(res[i]['image'].toString()),
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      });
+                },
+                child: Image.memory(
+                  base64Decode(res[i]['image'].toString()),
+                  fit: BoxFit.cover,
+                ),
+              ),
               title: Text(
                 "${res[i]['name']}",
                 style: const TextStyle(fontWeight: FontWeight.bold),

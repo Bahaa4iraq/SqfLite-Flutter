@@ -1,6 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sqflite_test/home.dart';
 import 'package:sqflite_test/sqlDB.dart';
 
@@ -9,11 +14,13 @@ class EditData extends StatefulWidget {
       {Key? key,
       required this.txtName,
       required this.txtPrice,
-      required this.id})
+      required this.id,
+      this.img64})
       : super(key: key);
   final String txtName;
   final String txtPrice;
   final String id;
+  final String? img64;
 
   @override
   State<EditData> createState() => _EditDataState();
@@ -22,6 +29,9 @@ class EditData extends StatefulWidget {
 class _EditDataState extends State<EditData> {
   TextEditingController name = TextEditingController();
   TextEditingController price = TextEditingController();
+  Uint8List? bytes;
+  File? img;
+  String? img63;
 
   SqlDB sqlDB = SqlDB();
   @override
@@ -29,6 +39,7 @@ class _EditDataState extends State<EditData> {
     super.initState();
     name.text = widget.txtName;
     price.text = widget.txtPrice;
+    img63 = widget.img64;
   }
 
   @override
@@ -91,6 +102,89 @@ class _EditDataState extends State<EditData> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 100),
+            child: OutlinedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  elevation: 6,
+                  primary: Colors.blueAccent,
+                ),
+                onPressed: () {
+                  showModalBottomSheet(
+                      context: context,
+                      builder: (context) => SizedBox(
+                            height: 120,
+                            child: Column(
+                              children: [
+                                InkWell(
+                                  onTap: (() async {
+                                    try {
+                                      XFile? xfile = await ImagePicker()
+                                          .pickImage(
+                                              source: ImageSource.gallery);
+                                      if (xfile != null) {
+                                        img = File(xfile.path);
+                                        bytes =
+                                            File(img!.path).readAsBytesSync();
+                                        img63 = base64Encode(bytes!);
+                                      }
+                                    } on PlatformException catch (e) {
+                                      print("faild to pickimage");
+                                    }
+                                  }),
+                                  child: Container(
+                                    height: 59,
+                                    alignment: Alignment.center,
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    child: const Text(
+                                      "اختر صورة من الاستوديو",
+                                      style: TextStyle(fontSize: 20),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  height: 2,
+                                  color: Colors.grey,
+                                ),
+                                InkWell(
+                                  hoverColor: Colors.grey,
+                                  onTap: () async {
+                                    try {
+                                      XFile? xfile = await ImagePicker()
+                                          .pickImage(
+                                              source: ImageSource.camera);
+                                      if (xfile != null) {
+                                        img = File(xfile.path);
+                                        bytes =
+                                            File(img!.path).readAsBytesSync();
+                                        img63 = base64Encode(bytes!);
+                                      }
+                                    } on PlatformException catch (e) {
+                                      print("faild to pickimage");
+                                    }
+                                  },
+                                  child: Container(
+                                    height: 59,
+                                    alignment: Alignment.center,
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    child: const Text(
+                                      "الكاميرا",
+                                      style: TextStyle(fontSize: 20),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ));
+                },
+                icon: Icon(Icons.add_a_photo, color: Colors.white),
+                label: Text(
+                  "Add Photo",
+                  style: TextStyle(color: Colors.white),
+                )),
+          ),
           const SizedBox(
             height: 40,
           ),
@@ -109,7 +203,7 @@ class _EditDataState extends State<EditData> {
                 } else {
                   int response = await sqlDB.update(
                       "items",
-                      {"name": name.text, "price": price.text},
+                      {"name": name.text, "price": price.text, "image": img63},
                       "id=${widget.id}");
                   if (response != 0) {
                     name.clear();

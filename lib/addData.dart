@@ -1,13 +1,22 @@
+import 'dart:convert';
+import 'dart:ffi';
+import 'dart:typed_data';
 import 'dart:ui';
-
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite_test/home.dart';
 import 'package:sqflite_test/sqlDB.dart';
+import 'dart:io';
 
 class AddData extends StatelessWidget {
   AddData({Key? key}) : super(key: key);
   TextEditingController name = TextEditingController();
   TextEditingController price = TextEditingController();
+  Uint8List? bytes;
+  String? img64;
+  File? img;
+
   SqlDB sqlDB = SqlDB();
   @override
   Widget build(BuildContext context) {
@@ -16,7 +25,7 @@ class AddData extends StatelessWidget {
         FocusScope.of(context).requestFocus(FocusNode());
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Color.fromARGB(255, 248, 250, 255),
         appBar: AppBar(
           leading: IconButton(
               onPressed: () {
@@ -69,6 +78,89 @@ class AddData extends StatelessWidget {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 100),
+            child: OutlinedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  elevation: 6,
+                  primary: Colors.blueAccent,
+                ),
+                onPressed: () {
+                  showModalBottomSheet(
+                      context: context,
+                      builder: (context) => SizedBox(
+                            height: 120,
+                            child: Column(
+                              children: [
+                                InkWell(
+                                  onTap: (() async {
+                                    try {
+                                      XFile? xfile = await ImagePicker()
+                                          .pickImage(
+                                              source: ImageSource.gallery);
+                                      if (xfile != null) {
+                                        img = File(xfile.path);
+                                        bytes =
+                                            File(img!.path).readAsBytesSync();
+                                        img64 = base64Encode(bytes!);
+                                      }
+                                    } on PlatformException catch (e) {
+                                      print("faild to pickimage");
+                                    }
+                                  }),
+                                  child: Container(
+                                    height: 59,
+                                    alignment: Alignment.center,
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    child: const Text(
+                                      "اختر صورة من الاستوديو",
+                                      style: TextStyle(fontSize: 20),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  height: 2,
+                                  color: Colors.grey,
+                                ),
+                                InkWell(
+                                  hoverColor: Colors.grey,
+                                  onTap: () async {
+                                    try {
+                                      XFile? xfile = await ImagePicker()
+                                          .pickImage(
+                                              source: ImageSource.camera);
+                                      if (xfile != null) {
+                                        img = File(xfile.path);
+                                        bytes =
+                                            File(img!.path).readAsBytesSync();
+                                        img64 = base64Encode(bytes!);
+                                      }
+                                    } on PlatformException catch (e) {
+                                      print("faild to pickimage");
+                                    }
+                                  },
+                                  child: Container(
+                                    height: 59,
+                                    alignment: Alignment.center,
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    child: const Text(
+                                      "الكاميرا",
+                                      style: TextStyle(fontSize: 20),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ));
+                },
+                icon: Icon(Icons.add_a_photo, color: Colors.white),
+                label: Text(
+                  "Add Photo",
+                  style: TextStyle(color: Colors.white),
+                )),
+          ),
           const SizedBox(
             height: 40,
           ),
@@ -85,8 +177,8 @@ class AddData extends StatelessWidget {
                         textAlign: TextAlign.center,
                       )));
                 } else {
-                  int response = await sqlDB
-                      .post("items", {"name": name.text, "price": price.text});
+                  int response = await sqlDB.post("items",
+                      {"name": name.text, "price": price.text, "image": img64});
                   if (response != 0) {
                     name.clear();
                     price.clear();
@@ -114,6 +206,13 @@ class AddData extends StatelessWidget {
                 width: double.maxFinite,
                 height: 60,
                 decoration: BoxDecoration(
+                  boxShadow: const [
+                    BoxShadow(
+                      offset: Offset(2, 2),
+                      blurRadius: 6,
+                      color: Colors.grey,
+                    )
+                  ],
                   borderRadius: BorderRadius.circular(10),
                   color: Colors.blueAccent,
                 ),

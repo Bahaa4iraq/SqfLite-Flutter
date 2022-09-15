@@ -21,7 +21,15 @@ class SqlDB {
     return db;
   }
 
-  Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {}
+  Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
+    Batch batch = db.batch();
+    batch.execute('''
+ALTER JOIN ADD COLMN("image" TEXT)
+
+)
+''');
+    batch.commit();
+  }
 
   onCreate(Database db, int version) async {
     Batch batch = db.batch();
@@ -29,7 +37,8 @@ class SqlDB {
 CREATE TABLE "items" (
   "id" INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT ,
 "name" TEXT NOT NULL ,
-"price" INTEGER NOT NULL
+"price" INTEGER NOT NULL,
+"image" TEXT
 )
 ''');
     batch.commit();
